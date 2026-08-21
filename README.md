@@ -5,6 +5,7 @@
 Designed, simulated, 3D-printed, and experimentally tested a manually variable-pitch propeller system — from blade theory and CAD through CFD validation to a self-built RPM and thrust measurement rig.
 
 ![Final Assembly](media/images/cad_model.jpeg)
+
 *SolidWorks assembly of the variable pitch hub, blades, and rack-and-pinion pitch control*
 
 ---
@@ -25,6 +26,7 @@ Fixed-pitch propellers are only efficient at one design point. This project buil
 The blade geometry (chord, thickness, and twist distribution at each radial station) was generated parametrically using **OpenProp**, based on target specs: 3 blades, 6000 RPM design point, 0.42 m rotor diameter, 20 N required thrust, 15 m/s advance speed.
 
 ![OpenProp Blade Profiles](media/images/blade_angel_profile.jpg)
+
 *2D blade sections at five radial stations (r/R = 0.15 to 0.96), generated from BEMT-based parametric design*
 
 The resulting profiles were exported and lofted into SolidWorks to build the 3D blade solid, hub, coupler, and locking-pin pitch control (16 discrete pitch configurations from 0° to 30° in 2° steps).
@@ -73,6 +75,7 @@ This decomposition is what drives the mechanism-design constraints below (low fr
 SolidWorks Flow Simulation was used to evaluate each pitch configuration at a fixed rotational speed (3000 RPM), extracting thrust force, drag force, and lift-to-drag ratio per angle.
 
 ![CFD Flow Trajectories](media/images/cfd.jpeg)
+
 *Flow trajectory vectors through the rotating propeller domain, coloured by velocity*
 
 **Setup / boundary conditions:**
@@ -102,6 +105,7 @@ Simulated thrust rose from 0.12 N at 0° pitch to a peak of **2.20 N at 28°**, 
 A **rack-and-pinion** mechanism was built to translate a single linear input into synchronized rotation of the blade roots — a low-friction, easily inspectable alternative to a swashplate for a bench-scale prototype.
 
 ![Rack and Pinion Pitch Mechanism](media/images/rack_pinion_pitch_mechanism.jpg)
+
 *Yellow gear rack meshing with pinion gears at each blade root, driven via a servo linkage*
 
 Design constraints considered: keeping the mechanism lightweight so it doesn't unbalance the disk, minimizing friction at the blade-root bearings, ensuring the rack/pinion and root bearings survive centrifugal loading at operating RPM, and holding pitch angle repeatability to within about ±1°.
@@ -128,9 +132,10 @@ Blade root bearings (radial + thrust type) carry the centrifugal load and let ea
 | Laser-diode tachometer (custom-built) | Non-contact RPM sensing off a reflective marker on the hub |
 
 ![RPM Control and Tachometer Setup](media/images/tachometer.png)
+
 *Laser-diode tachometer (left) and servo-driven pitch linkage (right) either side of the running propeller*
 
-The tachometer was built from a laser diode and photodiode pair: the beam is interrupted once per revolution by a marker on the rotating hub, and the pulse train is timed on the Arduino to compute RPM in real time.
+The tachometer was built from a laser diode and photodiode pair: the beam is interrupted once per revolution by a reflective marker on the rotating hub, and the resulting pulse train is timed on the Arduino (rising-edge interval → RPM = 60 / interval_seconds) to compute rotational speed in real time. Being non-contact, it avoids adding load or drag to the shaft, but is sensitive to marker alignment and ambient light — a factor the team later flagged as a likely source of the ~2800–2950 RPM under-reading against the 3000 RPM target.
 
 ---
 
@@ -146,9 +151,10 @@ A **custom load-cell thrust stand** was built to measure axial thrust directly, 
 | Test stand | Rigid wooden frame isolating the load cell from vibration and torque reaction |
 
 ![Test Bench Assembly](media/images/loadcell.jpg)
+
 *Full bench: BLDC motor and propeller mounted on the wooden test stand, wired to the three Arduinos handling throttle, tachometer, and load cell*
 
-**Procedure:** blade pitch was locked at a target angle, RPM was ramped to the test condition via the throttle potentiometer, and thrust was logged over five trials per configuration to average out fluctuation before moving to the next pitch angle.
+**Procedure:** blade pitch was locked at a target angle, RPM was ramped to the test condition via the throttle potentiometer, and thrust was logged over five trials per configuration to average out fluctuation before moving to the next pitch angle. The load cell's strain-gauge bridge produces a millivolt-level differential signal proportional to axial deflection; the HX711 amplifies and digitizes this (24-bit ADC) before the Arduino converts it to a calibrated force reading, so thrust is measured directly rather than backed out from motor current or RPM.
 
 ---
 
@@ -190,16 +196,31 @@ T     = ṁ · (v_out − v_in)     (axial thrust from momentum change)
 with propeller area `A = 0.0845 m²` (328 mm diameter) and standard sea-level air density `ρ = 1.225 kg/m³`. Unlike the CFD run, this treats the propeller as a simple actuator disk accelerating a bulk flow — no blade-resolved pressure distribution — so it trades some fidelity for a fast, independent sanity check on the bench numbers.
 
 ![Python Analysis Output](media/images/python_output.png)
+
 *Thrust calculated from measured inlet/outlet velocity and mass flow rate at each pitch angle, with correlation analysis*
 
 ![Propeller Performance Analysis](media/images/performance_plot.png)
+
 *Pitch angle vs. thrust, mass flow rate, velocity difference, and thrust efficiency (thrust per unit mass flow)*
 
-This analysis (328 mm propeller, standard sea-level air density) found the strongest correlation between thrust and mass flow rate (0.74), with peak thrust and peak efficiency both landing at **26° pitch** — close to, though not identical to, the 28° optimum from the CFD/experimental comparison above. The small offset is consistent with the difference in method: momentum theory here uses bulk inlet/outlet velocity rather than the full blade-resolved CFD, so it's a useful sanity check rather than a replacement for the CFD result.
+This analysis (328 mm propeller, standard sea-level air density) found the strongest correlation between thrust and mass flow rate (r = 0.74), a much weaker correlation between pitch angle and thrust directly (r = 0.29), and a moderate correlation between pitch angle and mass flow rate (r = 0.39). In other words, thrust here tracks *how much air the disk is moving* far more tightly than it tracks pitch angle in isolation — pitch angle only matters insofar as it changes the mass flow, which is exactly what momentum theory predicts. Peak thrust and peak thrust-per-unit-mass-flow (efficiency) both landed at **26° pitch** in this dataset — close to, though not identical to, the 28° optimum from the CFD/experimental comparison above. The offset is consistent with the difference in method: momentum theory here uses bulk inlet/outlet velocity rather than a full blade-resolved pressure field, so it functions as an independent sanity check rather than a replacement for the CFD result.
 
 ---
 
-## Tools & Methods
+## Limitations & Future Work
+
+**Current limitations:**
+- Pitch is set manually via alignment pins between runs — no in-flight or real-time pitch adjustment, so dynamic (transient) pitch effects couldn't be studied
+- Indoor testing introduced airflow recirculation and wall effects not present in the open CFD domain
+- Laser tachometer accuracy (±10 RPM, with observed under-reading) and load-cell drift both place a floor on measurement precision
+
+**Natural next steps:**
+- Replace manual pin-locking with **servo-actuated pitch control**, closing the loop with a PID controller so RPM and pitch can be regulated together against a thrust target
+- Move testing to an **open-jet wind tunnel** or outdoor setup to eliminate recirculation and validate the CFD boundary conditions more directly
+- Cross-check RPM readings with a **high-speed camera** in addition to the laser tachometer
+- Rebuild blades in **carbon-fiber or composite** for a better strength-to-weight ratio at higher RPM, and refine blade twist/airfoil profiling beyond the current OpenProp baseline
+
+---
 
 `OpenProp (BEMT)` `SolidWorks` `SolidWorks Flow Simulation (CFD)` `3D Printing (FDM, PLA)` `Arduino` `HX711 Load Cell Amplifier` `Python (data analysis)`
 
@@ -224,4 +245,5 @@ variable-pitch-propeller-test-bench/
 
 **Aerospace Propulsion Project (AS343AI), Department of Aerospace Engineering, RV College of Engineering**
 Akula Uday Kiran · Rutuj Dugad Manoj · Shanthosh K V · **Tejas L** · Yashwanth R
-Guided by Dr. Supreeth R, Associate Professor & Head, Department of Aerospace Engineering
+
+*Guided by Dr. Supreeth R, Associate Professor & Head, Department of Aerospace Engineering*
