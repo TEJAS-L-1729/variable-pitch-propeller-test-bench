@@ -21,6 +21,35 @@ Fixed-pitch propellers are only efficient at one design point. This project buil
 
 ---
 
+## 🙋 My Contribution
+ 
+This was a team project across all four stages. My work was concentrated in **Fabrication** and the **Test Bench**:
+ 
+| Area | What I Did |
+|---|---|
+| 🔧 **Pitch-Change Mechanism** | Designed the rack-and-pinion mechanism that translates a manual input into synchronized blade pitch rotation across all blades |
+| 🖨️ **3D Printing / Fabrication** | Printed the blades and hub (FDM, PLA), including managing tolerances so the pitch mechanism assembled and rotated smoothly |
+| 📟 **Tachometer Firmware** | Wrote the Arduino firmware for the laser-diode/photodiode tachometer — rising-edge interval timing to compute RPM in real time |
+| ⚙️ **ESC / RPM Control** | Wrote the Arduino code controlling the BLDC motor's RPM through the ESC |
+| 🧪 **Test Bench Assembly** | Assembled the complete rig — motor, ESC, tachometer, and load-cell thrust stand — into a working integrated test setup |
+ 
+### Skills Learnt
+ 
+![Mechanism Design](https://img.shields.io/badge/-Mechanism%20Design-455A64?style=flat&logoColor=white)
+![3D Printing](https://img.shields.io/badge/-FDM%203D%20Printing-FF6F00?style=flat&logoColor=white)
+![Arduino](https://img.shields.io/badge/-Arduino%20Firmware-00979D?style=flat&logo=arduino&logoColor=white)
+![BLDC/ESC](https://img.shields.io/badge/-BLDC%20Motor%20%2F%20ESC%20Control-B71C1C?style=flat&logoColor=white)
+![Instrumentation](https://img.shields.io/badge/-Non--Contact%20RPM%20Sensing-6A1B9A?style=flat&logoColor=white)
+ 
+- Designing a rack-and-pinion mechanism for synchronized multi-blade pitch actuation, and accounting for FDM print tolerances so it actually assembles and moves freely
+- Non-contact RPM measurement via edge-triggered pulse timing (laser diode + photodiode), and diagnosing sensitivity to marker alignment and ambient light as a source of measurement error
+- BLDC motor speed control through an ESC, driven from Arduino
+- **System integration** — bringing independently-built subsystems (blade/CFD outputs from teammates, mechanism, drive, sensing, load measurement) together into one functioning test rig, where interface mismatches surface fast
+- **Cross-functional coordination** — aligning fabrication tolerances and test-bench design against the blade geometry and pitch range defined by the CFD/blade-design sub-team
+- **Root-cause troubleshooting under measured data** — using the ~2800–2950 RPM under-reading against a 3000 RPM target to isolate sensor alignment, not motor performance, as the likely cause
+
+---
+
 ## Blade Design
 
 The blade geometry (chord, thickness, and twist distribution at each radial station) was generated parametrically using **OpenProp**, based on target specs: 3 blades, 6000 RPM design point, 0.42 m rotor diameter, 20 N required thrust, 15 m/s advance speed.
